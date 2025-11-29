@@ -160,7 +160,7 @@ const handleAddToCart = () => {
               )}
             </div>
 
-            <p className="text-lg text-muted-foreground mb-6">By {product.sellerId.name}</p>
+            <p className="text-lg text-muted-foreground mb-6">By {product.sellerId?.name}</p>
 
             {/* Pricing */}
             <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-xl">

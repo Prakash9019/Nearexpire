@@ -3,19 +3,25 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Shield, Users, Package, BarChart3, CheckCircle, XCircle } from "lucide-react"
+import Navbar from "@/components/Navbar"
 
 export default function AdminPanel() {
+  const [user, setUser] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("verification")
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string>("")
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const user = JSON.parse(localStorage.getItem("user") || "{}")
-      if (user.role !== "admin") {
+      const userStr = localStorage.getItem("user")
+      const user = userStr ? JSON.parse(userStr) : null
+
+      if (!user || user.role !== "admin") {
         window.location.href = "/login"
         return
       }
+      setUser(user)
       fetchPendingVerifications()
     }
     checkAdmin()
@@ -23,13 +29,18 @@ export default function AdminPanel() {
 
   const fetchPendingVerifications = async () => {
     try {
-      const response = await fetch("/api/admin/sellers?status=pending")
-      if (response.ok) {
-        const data = await response.json()
-        setPendingVerifications(data)
+      const response = await fetch("/api/admin/verify-seller")
+      if (!response.ok) {
+        throw new Error("Failed to fetch verifications")
       }
-    } catch (error) {
-      console.error("Failed to fetch verifications:", error)
+      const data = await response.json()
+      console.log("[v0] Fetched sellers:", data)
+      setPendingVerifications(Array.isArray(data) ? data : [])
+      setError("")
+    } catch (err: any) {
+      console.error("[v0] Verification fetch error:", err)
+      setError(err.message || "Failed to load verifications")
+      setPendingVerifications([])
     } finally {
       setLoading(false)
     }
@@ -47,16 +58,29 @@ export default function AdminPanel() {
         }),
       })
 
-      if (response.ok) {
-        fetchPendingVerifications()
+      if (!response.ok) {
+        throw new Error("Verification failed")
       }
+
+      fetchPendingVerifications()
     } catch (error) {
-      console.error("Verification error:", error)
+      console.error("[v0] Verification error:", error)
+      setError("Failed to verify seller")
     }
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading admin panel...</p>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <Navbar />
+
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
@@ -98,11 +122,15 @@ export default function AdminPanel() {
           })}
         </div>
 
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6">{error}</div>}
+
         {/* Verification Tab */}
         {activeTab === "verification" && (
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200">
-              <h2 className="text-xl font-bold text-foreground">Pending Seller Verifications</h2>
+              <h2 className="text-xl font-bold text-foreground">
+                Pending Seller Verifications ({pendingVerifications.length})
+              </h2>
             </div>
 
             {loading ? (
@@ -112,7 +140,7 @@ export default function AdminPanel() {
             ) : pendingVerifications.length === 0 ? (
               <div className="p-12 text-center">
                 <CheckCircle size={48} className="text-green-600 mx-auto mb-4" />
-                <p className="text-muted-foreground">All verifications are up to date!</p>
+                <p className="text-muted-foreground">All sellers are verified! No pending requests.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -120,6 +148,7 @@ export default function AdminPanel() {
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Company</th>
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Email</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">GST</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Status</th>
                       <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">Actions</th>
@@ -128,11 +157,12 @@ export default function AdminPanel() {
                   <tbody>
                     {pendingVerifications.map((seller) => (
                       <tr key={seller._id} className="border-b border-slate-200 hover:bg-slate-50">
-                        <td className="px-6 py-4 font-semibold text-foreground">{seller.companyName}</td>
-                        <td className="px-6 py-4 text-muted-foreground">{seller.gstNumber}</td>
+                        <td className="px-6 py-4 font-semibold text-foreground">{seller.companyName || "N/A"}</td>
+                        <td className="px-6 py-4 text-muted-foreground text-sm">{seller.email}</td>
+                        <td className="px-6 py-4 text-muted-foreground text-sm">{seller.gstNumber || "N/A"}</td>
                         <td className="px-6 py-4">
                           <span className="inline-flex items-center gap-1 bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
-                            ⏳ Pending Review
+                            ⏳ {seller.verificationStatus || "Pending"}
                           </span>
                         </td>
                         <td className="px-6 py-4 flex gap-2">

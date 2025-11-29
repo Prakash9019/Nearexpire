@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ShoppingCart, Leaf, Filter } from "lucide-react"
+import Navbar from "../../components/Navbar"
 
 interface Product {
   _id: string
@@ -63,11 +64,23 @@ export default function Marketplace() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
+      <Navbar />
+
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Marketplace</h1>
-          <p className="text-muted-foreground">Browse discounted household essentials</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground mb-2">Marketplace</h1>
+              <p className="text-muted-foreground flex items-center gap-2">
+                <Leaf size={16} className="text-green-600" /> Browse discounted household essentials & save the planet
+              </p>
+            </div>
+            <Link href="/cart" className="relative">
+              <div className="bg-primary text-primary-foreground p-3 rounded-lg hover:bg-primary/90 transition">
+                <ShoppingCart size={24} />
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -162,7 +175,7 @@ export default function Marketplace() {
                         <p className="text-xs text-muted-foreground mb-3">by {product.sellerId?.name}</p>
 
                         <div className="flex items-baseline gap-2 mb-3">
-                          <span className="text-2xl font-bold text-primary">₹{product.originalPrice - (product.originalPrice * product.discountPercentage / 100)}</span>
+                          <span className="text-2xl font-bold text-primary">₹{product.finalPrice.toFixed(0)}</span>
                           <span className="text-sm text-muted-foreground line-through">
                             ₹{product.originalPrice?.toFixed(0)}
                           </span>
@@ -176,12 +189,7 @@ export default function Marketplace() {
                           <span className="text-xs text-muted-foreground">Saves ~250g waste</span>
                         </div>
 
-                        <button onClick={(e) => {
-    e.preventDefault(); // Prevents the Link from navigating
-    e.stopPropagation(); // Stops the event bubbling
-    console.log("Add to cart clicked for", product._id);
-    // Add your add-to-cart logic here
-  }}  className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-semibold hover:bg-primary/90 transition flex items-center justify-center gap-2">
+                        <button className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-semibold hover:bg-primary/90 transition flex items-center justify-center gap-2">
                           <ShoppingCart size={16} /> Add to Cart
                         </button>
                       </div>

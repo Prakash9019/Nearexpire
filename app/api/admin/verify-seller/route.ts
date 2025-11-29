@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB()
     const { sellerId, approved, rejectionReason } = await req.json()
-
+     console.log("Received verification request:", { sellerId, approved, rejectionReason })
     const verification = await SellerVerification.findOneAndUpdate(
       { sellerId },
       {
